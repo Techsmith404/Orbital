@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbital-overseer"
+version = "1.0.0"
+description = "A sci-fi terminal dashboard for system monitoring"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "rich",
+    "psutil",
+    "sparklines"
+]
+
+[project.scripts]
+orbital = "orbital.main:main"
