@@ -1,0 +1,83 @@
+#IMPORTS
+from rich.layout import Layout
+from rich.panel import Panel
+from rich.text import Text
+from rich.live import Live
+from rich import print
+import psutil
+import time
+
+#VARIABLES
+diskInfo = psutil.disk_usage('/')
+disk2Info = psutil.disk_usage('/run/media/codaine/D05EF5A55EF5848E')
+netStats = psutil.net_io_counters()
+netSentOld = netStats.bytes_sent
+netRecvOld = netStats.bytes_recv
+layout = Layout()
+headPan = Panel("Orbital", style="bold white on blue")
+reactorPan = Panel(Text.from_markup("[bold red]Reactor information goes here[/bold red]", justify="center"))
+thrusterPan = Panel(Text.from_markup("[bold green]Thruster information goes here[/bold green]", justify="center"))
+cargoPan = Panel(Text.from_markup("[bold yellow]Cargo information goes here[/bold yellow]", justify="center"))
+uplinkPan = Panel(Text.from_markup("[bold cyan]Uplink information goes here[/bold cyan]", justify="center"))
+
+#LAYOUT CONFIGURATION
+layout.split_column(
+    Layout(name="head", size=3),
+    Layout(name="body")
+)
+
+layout["body"].split_row(
+    Layout(name="bodyLeft"),
+    Layout(name="bodyRight")
+    )
+
+layout["bodyLeft"].split_column(
+    Layout(name="topLeft"),
+    Layout(name="bottomLeft")
+    )
+
+layout["bodyRight"].split_column(
+    Layout(name="topRight"),
+    Layout(name="bottomRight")
+    )
+
+#UPDATES
+layout["head"].update(headPan)
+layout["topLeft"].update(reactorPan)
+layout["topRight"].update(thrusterPan)
+layout["bottomLeft"].update(cargoPan)
+layout["bottomRight"].update(uplinkPan)
+
+#PRINT
+with Live(layout, refresh_per_second=2) as live:
+    while True:
+        #VARIABLES
+        cpuPercent = psutil.cpu_percent(interval=0.1)
+        memInfo = psutil.virtual_memory()
+        netStats = psutil.net_io_counters()
+        netSentNew = netStats.bytes_sent
+        netRecvNew = netStats.bytes_recv
+        
+        #LOGIC
+        sentSpeed = netSentNew - netSentOld
+        recvSpeed = netRecvNew - netRecvOld
+        
+        netSentOld = netSentNew
+        netRecvOld = netRecvNew
+        
+        #PANEL UPDATES
+        reactorPan = Panel(Text.from_markup(f"[bold red]Reactor is running at[/bold red] [bold underline yellow]{cpuPercent}%[/bold underline yellow] [bold red]capacity.[/bold red]", justify="center"))
+        cargoPan = Panel(Text.from_markup(f"[bold yellow]Primary cargo hold is[/bold yellow] [bold underline red]{diskInfo.percent}%[/bold underline red] [bold yellow]full.[/bold yellow]\n[bold yellow]Secondary cargo hold is[/bold yellow] [bold underline red]{disk2Info.percent}%[/bold underline red] [bold yellow]full.[/bold yellow]\n[bold yellow]Random cargo hold is[/bold yellow] [bold underline red]{memInfo.percent}%[/bold underline red] [bold yellow]full.[/bold yellow]", justify="center"))
+        uplinkPan = Panel(Text.from_markup(f"[bold cyan]Uplink sending[/bold cyan] [bold underline violet]{sentSpeed}[/bold underline violet] [bold cyan]bytes of data.[/bold cyan]\n[bold cyan]Uplink recieving[/bold cyan] [bold underline violet]{recvSpeed}[/bold underline violet] [bold cyan]bytes of data.[/bold cyan]", justify="center"))
+        
+        #LIVE UPDATES
+        layout["topLeft"].update(reactorPan)
+        layout["bottomLeft"].update(cargoPan)
+        layout["bottomRight"].update(uplinkPan)
+
+        time.sleep(1)
+        pass
+
+
+
+
